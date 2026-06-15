@@ -68,10 +68,11 @@ const FILTERS = [
   { id: "progress", label: "Kesken" }, { id: "done", label: "Pesty" },
 ] as const;
 
-const ADD_ITEMS = [
-  { id: 1 as 1 | 2 | "del", label: "Punainen piste", desc: "Prioriteetti 1", dotBg: "radial-gradient(circle at 35% 30%, #fff, rgb(255,140,178) 55%)", glyph: "" },
-  { id: 2 as 1 | 2 | "del", label: "Keltainen piste", desc: "Prioriteetti 2", dotBg: "radial-gradient(circle at 35% 30%, #fff, rgb(240,226,150) 55%)", glyph: "" },
-  { id: "del" as "del", label: "Poista piste", desc: "Klikkaa poistettavaa", dotBg: "rgba(255,90,90,0.16)", glyph: "✕" },
+type PlaceMode = 1 | 2 | "del";
+const ADD_ITEMS: { id: PlaceMode; label: string; desc: string; dotBg: string; glyph: string }[] = [
+  { id: 1, label: "Punainen piste", desc: "Prioriteetti 1", dotBg: "radial-gradient(circle at 35% 30%, #fff, rgb(255,140,178) 55%)", glyph: "" },
+  { id: 2, label: "Keltainen piste", desc: "Prioriteetti 2", dotBg: "radial-gradient(circle at 35% 30%, #fff, rgb(240,226,150) 55%)", glyph: "" },
+  { id: "del", label: "Poista piste", desc: "Klikkaa poistettavaa", dotBg: "rgba(255,90,90,0.16)", glyph: "✕" },
 ];
 
 export default function FloorView({ marks, statuses, posOverrides, customMarks, deleted, initialFloor, onStatusChange, onAddCustomMark, onDeleteMark, onMoveMark, onMoveMarkCommit, onResetFloor }: Props) {

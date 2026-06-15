@@ -31,37 +31,26 @@ export default function AppShell() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [activeFloor, setActiveFloor] = useState("K");
   const [marks, setMarks] = useState<MarksData | null>(null);
-  const [statuses, setStatuses] = useState<Record<string, Status>>({});
-  const [posOverrides, setPosOverrides] = useState<Record<string, { x: number; y: number }>>({});
-  const [customMarks, setCustomMarks] = useState<Record<string, CustomMark[]>>({});
-  const [deleted, setDeleted] = useState<Record<string, boolean>>({});
-  const [hours, setHours] = useState({ matias: 0, joonatan: 0 });
-  const [log, setLog] = useState<LogEntry[]>([]);
-  const [hourLog, setHourLog] = useState<HourEntry[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [statuses, setStatuses] = useState<Record<string, Status>>(() => loadStorage().statuses || {});
+  const [posOverrides, setPosOverrides] = useState<Record<string, { x: number; y: number }>>(() => loadStorage().posOverrides || {});
+  const [customMarks, setCustomMarks] = useState<Record<string, CustomMark[]>>(() => loadStorage().customMarks || {});
+  const [deleted, setDeleted] = useState<Record<string, boolean>>(() => loadStorage().deleted || {});
+  const [hours, setHours] = useState<{ matias: number; joonatan: number }>(() => loadStorage().hours || { matias: 0, joonatan: 0 });
+  const [log, setLog] = useState<LogEntry[]>(() => loadStorage().log || []);
+  const [hourLog, setHourLog] = useState<HourEntry[]>(() => loadStorage().hourLog || []);
 
-  // Load persisted state + marks data
+  // Fetch marks data
   useEffect(() => {
-    const s = loadStorage();
-    if (s.statuses)    setStatuses(s.statuses);
-    if (s.hours)       setHours(s.hours);
-    if (s.log)         setLog(s.log);
-    if (s.hourLog)     setHourLog(s.hourLog);
-    if (s.posOverrides) setPosOverrides(s.posOverrides);
-    if (s.customMarks) setCustomMarks(s.customMarks);
-    if (s.deleted)     setDeleted(s.deleted);
     fetch("/marks_data.json")
       .then((r) => r.json())
       .then(setMarks)
       .catch(() => setMarks({}));
-    setLoaded(true);
   }, []);
 
-  // Auto-save (excluding posOverrides — those save on drag commit)
+  // Auto-save
   useEffect(() => {
-    if (!loaded) return;
     persist({ statuses, hours, log, hourLog, posOverrides, customMarks, deleted });
-  }, [loaded, statuses, hours, log, hourLog, customMarks, deleted]); // posOverrides excluded intentionally
+  }, [statuses, hours, log, hourLog, posOverrides, customMarks, deleted]);
 
   // Get priority of a window key
   const getPriority = useCallback((key: string): 1 | 2 => {
@@ -108,10 +97,8 @@ export default function AppShell() {
   }, []);
 
   const onMoveMarkCommit = useCallback((key: string, x: number, y: number) => {
-    const newPo = { ...posOverrides, [key]: { x, y } };
-    setPosOverrides(newPo);
-    persist({ statuses, hours, log, hourLog, posOverrides: newPo, customMarks, deleted });
-  }, [posOverrides, statuses, hours, log, hourLog, customMarks, deleted]);
+    setPosOverrides((prev) => ({ ...prev, [key]: { x, y } }));
+  }, []);
 
   const onResetFloor = useCallback((floor: string) => {
     const newPo = Object.fromEntries(Object.entries(posOverrides).filter(([k]) => !k.startsWith(floor + "#")));
@@ -120,8 +107,7 @@ export default function AppShell() {
     setPosOverrides(newPo);
     setDeleted(newDel);
     setCustomMarks(newCm);
-    persist({ statuses, hours, log, hourLog, posOverrides: newPo, customMarks: newCm, deleted: newDel });
-  }, [posOverrides, deleted, customMarks, statuses, hours, log, hourLog]);
+  }, [posOverrides, deleted, customMarks]);
 
   const onAddHours = useCallback((worker: "matias" | "joonatan", delta: number) => {
     const newHours = { ...hours, [worker]: Math.max(0, +(hours[worker] + delta).toFixed(2)) };
